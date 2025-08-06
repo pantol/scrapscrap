@@ -1,0 +1,9 @@
+{
+  "login_url": "https://portalanaliz.pl/forum/index.php",
+  "base_url": "https://portalanaliz.pl/forum/",
+  "delay_between_requests_sec": 2,
+  "filters": {
+    "keywords": [],
+    "target_users": []
+  }
+}
