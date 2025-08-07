@@ -5,75 +5,57 @@ from pathlib import Path
 
 def filter_threads_by_title(input_file, output_file=None, patterns=None, case_sensitive=False):
     """
-    Filter threads from JSON file based on title patterns.
-    
+    Filter threads from a JSON file based on title patterns and extract only titles and post contents.
+
     Args:
-        input_file: Path to input JSON file
-        output_file: Path to output JSON file (optional)
-        patterns: List of patterns to match in thread titles
-        case_sensitive: Whether to use case-sensitive matching
-    
+        input_file (str): Path to input JSON file.
+        output_file (str, optional): Path to save the filtered output JSON.
+        patterns (list of str, optional): Title patterns to match.
+        case_sensitive (bool): Whether to match patterns case-sensitively.
+
     Returns:
-        List of filtered threads
+        list: Filtered list of threads with only title and post content.
     """
-    
-    # Default patterns if none provided
     if patterns is None:
-        patterns = ['xtb', 'trn']  # Add more patterns as needed
-    
-    # Read the JSON file
+        patterns = ['xtb', 'trn']
+
     with open(input_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
-    
-    # Check if data is a list or dict with threads
+
+    # Detect the thread list
     if isinstance(data, dict):
-        # If it's a dict, look for common keys that might contain thread list
         threads = data.get('threads', data.get('data', data.get('items', [])))
         if not threads and len(data) > 0:
-            # Assume the dict values are the threads
             threads = list(data.values()) if not isinstance(list(data.values())[0], (str, int, float)) else [data]
     else:
         threads = data
-    
-    # Filter threads based on patterns
+
+    # Normalize patterns if needed
+    patterns_to_check = patterns if case_sensitive else [p.lower() for p in patterns]
+
     filtered_threads = []
-    
+
     for thread in threads:
-        # Get thread title - handle different possible structures
-        if isinstance(thread, dict):
-            title = thread.get('thread_title', thread.get('title', thread.get('name', '')))
-        else:
+        if not isinstance(thread, dict):
             continue
-        
-        # Check if any pattern matches the title
+
+        title = thread.get('thread_title', thread.get('title', thread.get('name', '')))
         title_to_check = title if case_sensitive else title.lower()
-        patterns_to_check = patterns if case_sensitive else [p.lower() for p in patterns]
-        
-        # Check for matches
-        for pattern in patterns_to_check:
-            # You can use different matching strategies:
-            
-            # Strategy 1: Pattern is anywhere in the title
-            if pattern in title_to_check:
-                filtered_threads.append(thread)
-                break
-            
-            # Strategy 2: Pattern matches as a whole word (uncomment if needed)
-            # if re.search(r'\b' + re.escape(pattern) + r'\b', title_to_check):
-            #     filtered_threads.append(thread)
-            #     break
-            
-            # Strategy 3: Pattern matches at the beginning (uncomment if needed)
-            # if title_to_check.startswith(pattern):
-            #     filtered_threads.append(thread)
-            #     break
-    
-    # Save to output file if specified
+
+        # Check if any pattern matches the title
+        if any(pattern in title_to_check for pattern in patterns_to_check):
+            filtered_thread = {
+                "title": title,
+                "posts": [{"content": post.get("content", "")} for post in thread.get("posts", [])]
+            }
+            filtered_threads.append(filtered_thread)
+
+    # Save to output file if requested
     if output_file:
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(filtered_threads, f, indent=2, ensure_ascii=False)
         print(f"Filtered {len(filtered_threads)} threads saved to {output_file}")
-    
+
     return filtered_threads
 
 
@@ -86,7 +68,12 @@ def main():
     # You can add more patterns or load them from a file
     PATTERNS = [
         'xtb',
-        'trn',
+        #'trn',
+        'dig',
+        #'1at',
+        'kgn',
+        'swm',
+        #'mci'
         # Add more patterns here
     ]
     
